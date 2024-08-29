@@ -1,0 +1,7 @@
+[Desktop Entry]
+_Name=Odoo Project TimeSheet (Alpha release)
+Exec=qmlscene %U qml/Main.qml
+Icon=assets/small_logo_blank.png
+Terminal=false
+Type=Application
+X-Lomiri-Touch=true

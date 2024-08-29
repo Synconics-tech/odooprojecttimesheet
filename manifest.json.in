@@ -1,0 +1,15 @@
+{
+    "name": "odooprojecttimesheet.synconics",
+    "description": "connectivity with Odoo on which user can fill timesheet entries.",
+    "architecture": "@CLICK_ARCH@",
+    "title": "Odoo Project TimeSheet (Alpha release)",
+    "hooks": {
+        "odooprojecttimesheet": {
+            "apparmor": "odooprojecttimesheet.apparmor",
+            "desktop":  "odooprojecttimesheet.desktop"
+        }
+    },
+    "version": "0.3.1",
+    "maintainer": "Synconics Technologies Pvt. Ltd. <contact@synconics.com>",
+    "framework" : "@CLICK_FRAMEWORK@"
+}
