@@ -26,6 +26,7 @@ Item {
     property bool isTextMenuVisible: false
     property bool isValidUrl: true
     property bool isValidLogin: true
+    property bool isPasswordVisible: false
 
     // Login form components
     Rectangle {
@@ -157,12 +158,30 @@ Item {
                 width: 1000
             }
 
-            TextField {
-                id: passwordInput
-                placeholderText: "Password"
+            Row {
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: 1000
-                echoMode: TextInput.Password
+                spacing: 5
+
+                TextField {
+                    id: passwordInput
+                    placeholderText: "Password"
+                    width: 900
+                    echoMode: isPasswordVisible ? TextInput.Normal : TextInput.Password
+                }
+
+                Button {
+                    width: 100
+                    height: 100
+                    Image {
+                        source: isPasswordVisible ? "images/show.png" : "images/hide.png"
+                        anchors.fill: parent
+                        smooth: true
+                    }
+                    onClicked: {
+                        isPasswordVisible = !isPasswordVisible
+                    }
+                }
+
             }
 
             Button {
