@@ -84,6 +84,214 @@ ApplicationWindow {
         }
 
         Component {
+            id: manageAccounts
+            Rectangle {
+                width: parent.width
+                height: parent.height
+                // color: "#ffffff"
+                Column {
+                    spacing: 0
+                    anchors.fill: parent
+                    Rectangle {
+                        width: parent.width
+                        height: 100
+                        color: "#121944"
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        Rectangle {
+                            width: parent.width
+                            height: 100
+                            color: "#121944"
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.leftMargin: 20
+                            Image {
+                                id: logo
+                                source: "images/small_logo_blank.png" // Path to your logo image
+                                width: 100 // Width of the logo
+                                height: 100 // Height of the logo
+                                anchors.top: parent.top
+                            }
+                        }
+                        Text {
+                            text: "Manage Accounts"
+                            anchors.centerIn: parent
+                            font.pixelSize: 40
+                            color: "#ffffff"
+                        }
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 80
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.topMargin: 130
+                    anchors.leftMargin: 20
+                    anchors.right: parent.right
+                    Label {
+                        font.bold: true
+                        font.pixelSize: 50
+                        text: "This page is under development"
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 80
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.topMargin: 200
+                    anchors.leftMargin: 20
+                    anchors.right: parent.right
+                    Label {
+                        font.pixelSize: 40
+                        text: "Agenda of this page is to work with multiple accounts \nwithout logging out, and provide facility to switching \naccounts."
+                    }
+                }
+                Rectangle {
+                    width: parent.width
+                    height: 80
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.topMargin: 400
+                    anchors.leftMargin: 20
+                    anchors.right: parent.right
+                    Button {
+                        id: backButton
+                        width: 150
+                        height: 130
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        background: Rectangle {
+                            color: "#121944"
+                            border.color: "#121944"
+                        }
+
+                        // Hamburger Icon
+                        Label {
+                            text: "Back"
+                            font.pixelSize: 40
+                            color: "#fff"
+                            anchors.centerIn: parent
+                        }
+
+                        // Show/hide the menu on click
+                        onClicked: stackView.push(listPage)
+                    }
+                }
+            }
+
+        }
+
+        Component {
+            id: storedTimesheets
+            Rectangle {
+                width: parent.width
+                height: parent.height
+                color: "#ffffff"
+                Column {
+                    spacing: 0
+                    anchors.fill: parent
+                    Rectangle {
+                        width: parent.width
+                        height: 100
+                        color: "#121944"
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        Rectangle {
+                            width: parent.width
+                            height: 100
+                            color: "#121944"
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.leftMargin: 20
+                            Image {
+                                id: logo
+                                source: "images/small_logo_blank.png" // Path to your logo image
+                                width: 100 // Width of the logo
+                                height: 100 // Height of the logo
+                                anchors.top: parent.top
+                            }
+                        }
+                        Text {
+                            text: "Stored Timesheet"
+                            anchors.centerIn: parent
+                            font.pixelSize: 40
+                            color: "#ffffff"
+                        }
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 80
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.topMargin: 130
+                    anchors.leftMargin: 20
+                    anchors.right: parent.right
+                    Label {
+                        font.bold: true
+                        font.pixelSize: 50
+                        text: "This page is under development"
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 80
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.topMargin: 200
+                    anchors.leftMargin: 20
+                    anchors.right: parent.right
+                    Label {
+                        font.pixelSize: 40
+                        text: "Agenda of this page is to see existing timesheet entries\n which are remaining to be synchronized with Odoo and\nability to sync all entries account wise."
+                    }
+                }
+                Rectangle {
+                    width: parent.width
+                    height: 80
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.topMargin: 400
+                    anchors.leftMargin: 20
+                    anchors.right: parent.right
+                    Button {
+                        id: backButton
+                        width: 150
+                        height: 130
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        background: Rectangle {
+                            color: "#121944"
+                            border.color: "#121944"
+                        }
+
+                        // Hamburger Icon
+                        Label {
+                            text: "Back"
+                            font.pixelSize: 40
+                            color: "#fff"
+                            anchors.centerIn: parent
+                        }
+
+                        // Show/hide the menu on click
+                        onClicked: stackView.push(listPage)
+                    }
+                }
+            }
+
+        }
+
+        Component {
             id: listPage
             Rectangle {
                 width: parent.width
@@ -157,17 +365,65 @@ ApplicationWindow {
                                 onClicked: hamburgerButtonmenu.open()
                             }
 
+                            
+
                             // Dropdown Menu
                             Menu {
                                 id: hamburgerButtonmenu
                                 x: hamburgerButton.x
                                 y: hamburgerButton.y + hamburgerButton.height
-                                width: 200
-                                height: 80
+                                width: 400
+                                height: 250
                                 background: Rectangle {
                                     color: "#121944" // Background color of the MenuItem
                                     radius: 4
                                     border.color: "transparent" // Optional: remove border if needed
+                                }
+
+                                MenuItem {
+                                    width: parent.width
+                                    height: 70
+                                    // color: "#121944"
+                                    background: Rectangle {
+                                        color: "#121944" // Background color of the MenuItem
+                                        radius: 4
+                                        border.color: "#121944" // Optional: remove border if needed
+                                    }
+
+                                    Text {
+                                        text: "MANAGE ACCOUNTS"
+                                        font.pixelSize: 30
+                                        anchors.centerIn: parent
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        color: "#fff"
+                                    }
+                                    // text: 
+                                    onClicked: {
+                                        stackView.push(manageAccounts);
+                                    }
+                                }
+
+                                MenuItem {
+                                    width: parent.width
+                                    height: 70
+                                    // color: "#121944"
+                                    background: Rectangle {
+                                        color: "#121944" // Background color of the MenuItem
+                                        radius: 4
+                                        border.color: "#121944" // Optional: remove border if needed
+                                    }
+
+                                    Text {
+                                        text: "TIMESHEETS"
+                                        font.pixelSize: 30
+                                        anchors.centerIn: parent
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        color: "#fff"
+                                    }
+                                    // text: 
+                                    onClicked: {
+                                        stackView.push(storedTimesheets);
+                                    }
                                 }
 
                                 MenuItem {
