@@ -13,6 +13,7 @@
  You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
+
 import xmlrpc.client
 import logging
 from datetime import datetime
@@ -21,7 +22,6 @@ import urllib3
 urllib3.disable_warnings()
 import json
 http = urllib3.PoolManager(cert_reqs='CERT_NONE')
-
 
 logging.basicConfig(level=logging.DEBUG)
 logging.basicConfig(filename='app.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -40,7 +40,7 @@ def logout():
     uid = False
     global password
     password = False
-    return True    
+    return True
 
 def fetch_databases(url):
     logging.info('\n\n fetch_databases >>>>>>>>>>>>> >>>>>>>>>>>>>>> %s' % url)
@@ -75,10 +75,13 @@ def get_db_list(url):
 def login_odoo(selected_url, username, password_filled, database_dict):
     global db
     selected_db = db
+
     if database_dict['isTextInputVisible']:
         selected_db = database_dict['input_text']
     elif database_dict['isTextMenuVisible']:
         selected_db = database_dict['selected_db']
+    if not selected_db and database_dict.get('input_text'):
+        selected_db = database_dict.get('input_text')
     common = xmlrpc.client.ServerProxy('{}/xmlrpc/2/common'.format(selected_url))
     generated_uid = common.authenticate(selected_db, username, password_filled, {})
     db = selected_db
@@ -95,7 +98,7 @@ def login_odoo(selected_url, username, password_filled, database_dict):
                                   [uid],
                                   {'fields': ['name']})
         logging.info('\n\n user_name >>>>>>>>>>>>>', user_name)
-        return {'result': 'pass', 'name_of_user': user_name[0]['name']}
+        return {'result': 'pass', 'name_of_user': user_name[0]['name'], 'database': selected_db}
     return {'result': 'Fail'}
 
 def fetch_options():

@@ -17,6 +17,7 @@
 import QtQuick 2.7
 import QtQuick.Window 2.2
 import QtQuick.Controls 2.2
+import QtQuick.LocalStorage 2.7
 
 Item {
     width: Screen.width
@@ -26,7 +27,49 @@ Item {
     property bool isTextMenuVisible: false
     property bool isValidUrl: true
     property bool isValidLogin: true
+    property bool isValidAccount: true
     property bool isPasswordVisible: false
+    property var accountsList: []
+
+    function initializeDatabase() {
+        var db = LocalStorage.openDatabaseSync("myDatabase", "1.0", "My Database", 1000000);
+
+        db.transaction(function(tx) {
+            // Create a table if it doesn't exist
+            tx.executeSql('CREATE TABLE IF NOT EXISTS users (\
+                id INTEGER PRIMARY KEY AUTOINCREMENT,\
+                name TEXT NOT NULL,\
+                link TEXT NOT NULL,\
+                database TEXT NOT NULL,\
+                username TEXT NOT NULL\
+            )');
+        });
+    }
+
+    function insertData(name, link, database, username) {
+        var db = LocalStorage.openDatabaseSync("myDatabase", "1.0", "My Database", 1000000);
+
+        db.transaction(function(tx) {
+            var result = tx.executeSql('SELECT COUNT(*) AS count FROM users WHERE link = ? AND database = ? AND username = ?', [link, database, username]);
+        
+            if (result.rows.item(0).count === 0) {
+                tx.executeSql('INSERT INTO users (name, link, database, username) VALUES (?, ?, ?, ?)', [name, link, database, username]);
+            }
+        });
+    }
+
+    function queryData() {
+        var db = LocalStorage.openDatabaseSync("myDatabase", "1.0", "My Database", 1000000);
+
+        db.transaction(function(tx) {
+            var result = tx.executeSql('SELECT * FROM users');
+            console.log("Database Query Results:");
+            accountsList = [];
+            for (var i = 0; i < result.rows.length; i++) {
+                accountsList.push({'user_id': result.rows.item(i).id, 'name': result.rows.item(i).name, 'link': result.rows.item(i).link, 'database': result.rows.item(i).database, 'username': result.rows.item(i).username})
+            }
+        });
+    }
 
     // Login form components
     Rectangle {
@@ -50,6 +93,72 @@ Item {
             anchors.top: logo.bottom
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.margins: 20
+
+            ListModel {
+                id: accountsListModel
+                // Example data
+            }
+
+
+            TextField {
+                id: manageAccountInput
+                placeholderText: "Account"
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 1000
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        queryData();
+                        accountsListModel.clear();
+                        for (var i = 0; i < accountsList.length; i++) {
+                            accountsListModel.append(accountsList[i]);
+                        }
+                        menuManageAccounts.open(); // Open the menu after fetching options
+                    }
+                }
+                Menu {
+                    id: menuManageAccounts
+                    x: manageAccountInput.x
+                    y: manageAccountInput.y
+                    width: manageAccountInput.width
+
+                    Repeater {
+                        model: accountsListModel
+
+                        MenuItem {
+                            width: parent.width
+                            height: 80
+                            property string itemId: model.user_id  // Custom property for ID
+                            property string itemName: model.name || ''
+                            Text {
+                                text: itemName
+                                font.pixelSize: 40
+                                color: "#000"
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.left: parent.left
+                                anchors.leftMargin: 10                                
+                                wrapMode: Text.WordWrap
+                                elide: Text.ElideRight   
+                                maximumLineCount: 2
+                            }
+                            onClicked: {
+                                manageAccountInput.text = model.name || ''
+                                linkInput.text = model.link
+                                dbInput.text = model.database
+                                usernameInput.text = model.username
+                                menuManageAccounts.close()
+                            }
+                        }
+                    }
+                }
+            }
+
+            TextField {
+                id: accountNameInput
+                placeholderText: "Account Name"
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: 1000
+            }
 
             TextField {
                 id: linkInput
@@ -133,11 +242,11 @@ Item {
                             height: 80
                             Text {
                                 text: modelData
-                                font.pixelSize: 40                    
+                                font.pixelSize: 40   
                                 color: "#000"
                                 anchors.verticalCenter: parent.verticalCenter
                                 anchors.left: parent.left
-                                anchors.leftMargin: 10                                                 
+                                anchors.leftMargin: 10
                                 wrapMode: Text.WordWrap
                                 elide: Text.ElideRight   
                                 maximumLineCount: 2 
@@ -203,18 +312,31 @@ Item {
                 }
                 anchors.horizontalCenter: parent.horizontalCenter
                 onClicked: {
-                    python.call("backend.login_odoo", [linkInput.text, usernameInput.text, passwordInput.text, {'input_text': dbInput.text, 'selected_db': dbInputMenu.text, 'isTextInputVisible': isTextInputVisible, 'isTextMenuVisible': isTextMenuVisible}], function (result) {
-                        if (result && result['result'] == 'pass') {
-                            isValidLogin = true;
-                            loggedIn(result['name_of_user']);
-                        }
-                        else {
-                            isValidLogin = false;
-                           console.log("Invalid credentials"); 
-                        }
-                    })
+                    if (!accountNameInput.text && !manageAccountInput.text) {
+                        isValidAccount = false;
+                    } else {
+                        python.call("backend.login_odoo", [linkInput.text, usernameInput.text, passwordInput.text, {'input_text': dbInput.text, 'selected_db': dbInputMenu.text, 'isTextInputVisible': isTextInputVisible, 'isTextMenuVisible': isTextMenuVisible}], function (result) {
+                            if (result && result['result'] == 'pass') {
+                                insertData(accountNameInput.text, linkInput.text, result['database'], usernameInput.text)
+                                isValidLogin = true;
+                                loggedIn(result['name_of_user']);
+                            }
+                            else {
+                                isValidLogin = false;
+                               console.log("Invalid credentials");
+                            }
+                        })
+                    }
                 }
                 
+            }
+
+            Text {
+                id: errorMessageAccount
+                text: isValidAccount ? "" : "Please enter Account Name to save!"
+                color: "red"
+                visible: !isValidAccount
+                font.pixelSize: 40
             }
 
             Text {
@@ -226,6 +348,12 @@ Item {
             }
         }
     }
+
+    Component.onCompleted: {
+        initializeDatabase();
+        queryData();
+    }
+
 
     // Signal emitted upon successful login
     signal loggedIn(string username)
