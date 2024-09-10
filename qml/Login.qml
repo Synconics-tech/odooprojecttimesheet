@@ -18,6 +18,7 @@ import QtQuick 2.7
 import QtQuick.Window 2.2
 import QtQuick.Controls 2.2
 import QtQuick.LocalStorage 2.7
+// import Qt.labs.platform 1.0
 
 Item {
     width: Screen.width
@@ -30,6 +31,10 @@ Item {
     property bool isValidAccount: true
     property bool isPasswordVisible: false
     property var accountsList: []
+    property string user_name: ""
+    property string account_name: ""
+    property string selected_database: ""
+    property string selected_link: ""
 
     function initializeDatabase() {
         var db = LocalStorage.openDatabaseSync("myDatabase", "1.0", "My Database", 1000000);
@@ -102,9 +107,10 @@ Item {
 
             TextField {
                 id: manageAccountInput
-                placeholderText: "Account"
+                placeholderText: "Select Account"
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: 1000
+                visible: accountsList.length == 0
                 MouseArea {
                     anchors.fill: parent
                     onClicked: {
@@ -113,6 +119,7 @@ Item {
                         for (var i = 0; i < accountsList.length; i++) {
                             accountsListModel.append(accountsList[i]);
                         }
+                        accountsListModel.append({'name': 'Add New account', 'user_id': false})
                         menuManageAccounts.open(); // Open the menu after fetching options
                     }
                 }
@@ -133,19 +140,30 @@ Item {
                             Text {
                                 text: itemName
                                 font.pixelSize: 40
-                                color: "#000"
+                                color: "#000" ? itemId != false : "#121944"
                                 anchors.verticalCenter: parent.verticalCenter
                                 anchors.left: parent.left
                                 anchors.leftMargin: 10                                
                                 wrapMode: Text.WordWrap
-                                elide: Text.ElideRight   
+                                elide: Text.ElideRight
                                 maximumLineCount: 2
                             }
                             onClicked: {
-                                manageAccountInput.text = model.name || ''
-                                linkInput.text = model.link
-                                dbInput.text = model.database
-                                usernameInput.text = model.username
+                                if (itemId != false) {
+                                    manageAccountInput.text = model.name || ''
+                                    linkInput.forceActiveFocus();
+                                    linkInput.text = model.link
+                                    linkInput.focus = false;
+                                    linkInput.forceActiveFocus();
+                                    dbInput.text = model.database
+                                    dbInputMenu.text = model.database
+                                    usernameInput.text = model.username
+                                } else {
+                                    manageAccountInput.text = ''
+                                    linkInput.text = ''
+                                    dbInput.text = ''
+                                    usernameInput.text = ''
+                                }
                                 menuManageAccounts.close()
                             }
                         }
@@ -352,6 +370,12 @@ Item {
     Component.onCompleted: {
         initializeDatabase();
         queryData();
+        // if (stackView.currentItem && stackView.currentItem.data) {
+        //     usernameInput.text = user_name || ''
+        //     manageAccountInput.text = account_name || ''
+        //     dbInput.text = selected_database || ''
+        //     linkInput.text = selected_link || ''
+        // }
     }
 
 

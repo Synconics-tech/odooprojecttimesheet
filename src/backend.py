@@ -26,6 +26,7 @@ http = urllib3.PoolManager(cert_reqs='CERT_NONE')
 logging.basicConfig(level=logging.DEBUG)
 logging.basicConfig(filename='app.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
+
 url = False
 db = False
 uid = False
@@ -145,7 +146,8 @@ def save_timesheet_entries(timesheet_entries):
 
     models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
     entry_vals = []
-    entry_list = eval(timesheet_entries)
+    timesheet_entries = '%s' % timesheet_entries
+    entry_list = json.loads(timesheet_entries)
     for entry in entry_list:
         project = [False]
         task = [False]
@@ -165,8 +167,13 @@ def save_timesheet_entries(timesheet_entries):
             date_obj = datetime.strptime(entry.get('dateTime'), '%m/%d/%Y')  # Parse date string to datetime object
             formatted_date = date_obj.strftime('%Y-%m-%d')
         time_float = False
-        if entry.get('spenthours'):
-            hours, minutes = entry.get('spenthours').split(':')
+        spent_duration = False
+        if entry.get('spenthours') and not entry['isManualTimeRecord']:
+            spent_duration = entry.get('spenthours')
+        elif entry.get('manualSpentHours') and entry['isManualTimeRecord']:
+            spent_duration = entry.get('manualSpentHours')
+        if spent_duration:
+            hours, minutes = spent_duration.split(':')
             hours = int(hours)
             minutes = int(minutes)
             time_float = hours + minutes / 60.0
