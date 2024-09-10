@@ -9,7 +9,7 @@
             "desktop":  "odooprojecttimesheet.desktop"
         }
     },
-    "version": "0.3.3",
+    "version": "0.3.6",
     "maintainer": "Synconics Technologies Pvt. Ltd. <contact@synconics.com>",
     "framework" : "@CLICK_FRAMEWORK@"
 }

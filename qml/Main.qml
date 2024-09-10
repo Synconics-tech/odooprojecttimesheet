@@ -33,6 +33,7 @@ ApplicationWindow {
     property string selected_username: ""
     property bool isTimesheetSaved: false
     property bool isTimesheetClicked: false
+    property bool isManualTime: false
 
     Python {
         id: python
@@ -69,7 +70,6 @@ ApplicationWindow {
 
         initialItem: loginPage
 
-        // Login page
         Component {
             id: loginPage
             Item {
@@ -85,6 +85,24 @@ ApplicationWindow {
 
         Component {
             id: manageAccounts
+            Item {
+                ManageAccounts {
+                    anchors.centerIn: parent
+                    onLogInPage: {
+                        stackView.push(loginPage, {'user_name': username, 'account_name': name, 'selected_database': db, 'selected_link': link})
+                    }
+                    onBackPage: {
+                        stackView.push(listPage)
+                    }
+                    onGoToLogin: {
+                        stackView.push(loginPage)
+                    }
+                }
+            }
+        }
+
+        Component {
+            id: wipmanageAccounts
             Rectangle {
                 width: parent.width
                 height: parent.height
@@ -785,16 +803,21 @@ ApplicationWindow {
                                             id: descriptionplaceholder
                                             text: "Description"
                                             color: "#aaa"
-                                            font.pixelSize: 30
+                                            font.pixelSize: 40
                                             anchors.fill: parent
                                             verticalAlignment: Text.AlignVCenter
                                         }
 
-                                        onTextChanged: {
-                                            if (descriptionInput.text.length > 0) {
+                                        onFocusChanged: {
+                                            if (focus) {
                                                 descriptionplaceholder.visible = false
                                             } else {
-                                                descriptionplaceholder.visible = true
+                                                if (descriptionInput.text.length > 0) {
+                                                    descriptionplaceholder.visible = false
+                                                } else {
+                                                    descriptionplaceholder.visible = true
+                                                }
+
                                             }
                                         }
                                     }
@@ -807,7 +830,51 @@ ApplicationWindow {
                                     id: spenthoursInput
                                     text: formatTime(elapsedTime)
                                     validator: RegExpValidator { regExp: /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/ }
+                                    visible: !isManualTime
                                 }
+
+                                Rectangle {
+                                    width: 750
+                                    height: 80
+
+                                    color: "transparent"
+                                    visible: isManualTime
+
+                                    Rectangle {
+                                        width: parent.width
+                                        height: 2
+                                        color: "black"
+                                        anchors.bottom: parent.bottom
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                    }
+                                    TextInput {
+                                        width: parent.width
+                                        height: parent.height
+                                        font.pixelSize: 40
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+                                        id: spenthoursManualInput
+                                        // text: gridModel.get(index).task
+                                        Text {
+                                            id: spenthoursManualInputPlaceholder
+                                            text: "00:00"
+                                            color: "#aaa"
+                                            font.pixelSize: 30
+                                            anchors.fill: parent
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+
+                                        onTextChanged: {
+                                            if (spenthoursManualInput.text.length > 0) {
+                                                spenthoursManualInputPlaceholder.visible = false
+                                            } else {
+                                                spenthoursManualInputPlaceholder.visible = true
+                                            }
+                                        }
+                                    }
+                                }
+
                                 Row {
                                     spacing: 10
                                     Button {
@@ -857,6 +924,31 @@ ApplicationWindow {
                                             running = false;
                                         }
                                     }
+                                    Button {
+
+                                        background: Rectangle {
+                                            color: "#121944"
+                                            radius: 10
+                                            border.color: "#87ceeb"
+                                            border.width: 2
+                                        }
+
+                                        contentItem: Text {
+                                            text: isManualTime ? "Auto" : "Manual"
+                                            color: "#ffffff"
+                                            font.pixelSize: 30
+                                        }
+
+
+                                        text: "Reset"
+                                        onClicked: {
+                                            stopwatchTimer.stop();
+                                            elapsedTime = 0;
+                                            running = false;
+                                            spenthoursManualInput.text = ""
+                                            isManualTime = !isManualTime
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -897,8 +989,10 @@ ApplicationWindow {
                                     if (isTimesheetSaved) {
                                         isTimesheetClicked = false;
                                         isTimesheetSaved = false;
+                                        isManualTime = false;
                                         projectInput.text = "";
                                         taskInput.text = "";
+                                        spenthoursManualInput.text = "";
                                         descriptionInput.text = "";
                                         elapsedTime = 0;
                                     }
@@ -912,6 +1006,8 @@ ApplicationWindow {
                                     dateTime: datetimeInput.text,
                                     project: projectInput.text,
                                     task: taskInput.text,
+                                    isManualTimeRecord: isManualTime,
+                                    manualSpentHours: spenthoursManualInput.text,
                                     description: descriptionInput.text,
                                     spenthours: spenthoursInput.text
                                 };
