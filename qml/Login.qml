@@ -85,7 +85,7 @@ Item {
 
         Image {
             id: logo
-            source: "images/large_logo_blank.png" // Path to your logo image
+            source: "images/timesheets_large_logo.png" // Path to your logo image
             width: 500
             height: 500
             anchors.top: parent.top

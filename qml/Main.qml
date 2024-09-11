@@ -127,7 +127,7 @@ ApplicationWindow {
                             anchors.leftMargin: 20
                             Image {
                                 id: logo
-                                source: "images/small_logo_blank.png" // Path to your logo image
+                                source: "images/timesheets_small_logo.png" // Path to your logo image
                                 width: 100 // Width of the logo
                                 height: 100 // Height of the logo
                                 anchors.top: parent.top
@@ -231,7 +231,7 @@ ApplicationWindow {
                             anchors.leftMargin: 20
                             Image {
                                 id: logo
-                                source: "images/small_logo_blank.png" // Path to your logo image
+                                source: "images/timesheets_small_logo.png" // Path to your logo image
                                 width: 100 // Width of the logo
                                 height: 100 // Height of the logo
                                 anchors.top: parent.top
@@ -335,7 +335,7 @@ ApplicationWindow {
                             anchors.leftMargin: 20
                             Image {
                                 id: logo
-                                source: "images/small_logo_blank.png" // Path to your logo image
+                                source: "images/timesheets_small_logo.png" // Path to your logo image
                                 width: 100 // Width of the logo
                                 height: 100 // Height of the logo
                                 anchors.top: parent.top
