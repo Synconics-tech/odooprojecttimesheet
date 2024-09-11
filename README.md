@@ -1,4 +1,4 @@
-# Odoo Project TimeSheet ( Alpha release)
+# Project TimeSheet ( Alpha release)
 
 connectivity with Odoo on which user can fill timesheet entries.
 
