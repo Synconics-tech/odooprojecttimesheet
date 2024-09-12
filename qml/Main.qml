@@ -29,11 +29,27 @@ ApplicationWindow {
     property var optionList: []
     property var tasksList: []
     property int elapsedTime: 0
+    property int selectedProjectId: 0
+    property int selectedTaskId: 0
+    property int selectedSubTaskId: 0
     property bool running: false
+    property bool hasSubTask: false;
     property string selected_username: ""
     property bool isTimesheetSaved: false
     property bool isTimesheetClicked: false
     property bool isManualTime: false
+    property var currentTime: false
+    property int storedElapsedTime: 0
+
+    onActiveChanged: {
+        if (active) {
+            if (currentTime) {
+                if (running) {
+                    elapsedTime = parseInt((new Date() - currentTime) / 1000) + storedElapsedTime
+                }
+            }
+        }
+    }
 
     Python {
         id: python
@@ -77,6 +93,11 @@ ApplicationWindow {
                     anchors.centerIn: parent
                     onLoggedIn: {
                         selected_username = username;
+                        currentTime = false;
+                        stopwatchTimer.stop();
+                        elapsedTime = 0;
+                        storedElapsedTime = 0;
+                        running = false;
                         stackView.push(listPage);
                     }
                 }
@@ -92,6 +113,11 @@ ApplicationWindow {
                         stackView.push(loginPage, {'user_name': username, 'account_name': name, 'selected_database': db, 'selected_link': link})
                     }
                     onBackPage: {
+                        currentTime = false;
+                        stopwatchTimer.stop();
+                        storedElapsedTime = 0;
+                        elapsedTime = 0;
+                        running = false;
                         stackView.push(listPage)
                     }
                     onGoToLogin: {
@@ -198,7 +224,14 @@ ApplicationWindow {
                         }
 
                         // Show/hide the menu on click
-                        onClicked: stackView.push(listPage)
+                        onClicked: {
+                            currentTime = false;
+                            stopwatchTimer.stop();
+                            storedElapsedTime = 0;
+                            elapsedTime = 0;
+                            running = false;
+                            stackView.push(listPage)
+                        }
                     }
                 }
             }
@@ -302,7 +335,14 @@ ApplicationWindow {
                         }
 
                         // Show/hide the menu on click
-                        onClicked: stackView.push(listPage)
+                        onClicked: {
+                            currentTime = false;
+                            stopwatchTimer.stop();
+                            elapsedTime = 0;
+                            storedElapsedTime = 0;
+                            running = false;
+                            stackView.push(listPage)
+                        }
                     }
                 }
             }
@@ -517,6 +557,10 @@ ApplicationWindow {
                                 Label { text: "Task" 
                                 width: 150
                                 height: 80}
+                                Label { text: "Sub Task" 
+                                width: 150
+                                height: 80
+                                visible: hasSubTask}
                                 Label { text: "Description" 
                                 width: 150
                                 height: 80}
@@ -617,6 +661,12 @@ ApplicationWindow {
                                         anchors.left: parent.left
                                         anchors.right: parent.right
                                     }
+
+                                    ListModel {
+                                        id: projectsListModel
+                                        // Example data
+                                    }
+
                                     TextInput {
                                         width: parent.width
                                         height: parent.height
@@ -638,7 +688,11 @@ ApplicationWindow {
                                             anchors.fill: parent
                                             onClicked: {
                                                 python.call("backend.fetch_options", {} , function(result) {
-                                                    optionList = result;
+                                                    // optionList = result;
+                                                    projectsListModel.clear();
+                                                    for (var i = 0; i < result.length; i++) {
+                                                        projectsListModel.append(result[i]);
+                                                    }
                                                     menu.open(); // Open the menu after fetching options
                                                 });
 
@@ -653,13 +707,15 @@ ApplicationWindow {
 
 
                                             Repeater {
-                                                model: optionList
+                                                model: projectsListModel
 
                                                 MenuItem {
                                                     width: parent.width
                                                     height: 80
+                                                    property int projectId: model.id  // Custom property for ID
+                                                    property string projectName: model.name || ''
                                                     Text {
-                                                        text: modelData
+                                                        text: projectName
                                                         font.pixelSize: 40
                                                         bottomPadding: 5
                                                         topPadding: 5
@@ -674,8 +730,13 @@ ApplicationWindow {
                                                     }
 
                                                     onClicked: {
-                                                        projectInput.text = modelData
-
+                                                        taskInput.text = ''
+                                                        selectedTaskId = 0
+                                                        subTaskInput.text = ''
+                                                        selectedSubTaskId = 0
+                                                        hasSubTask = false
+                                                        projectInput.text = projectName
+                                                        selectedProjectId = projectId
                                                         menu.close()
                                                     }
                                                 }
@@ -705,6 +766,12 @@ ApplicationWindow {
                                         anchors.left: parent.left
                                         anchors.right: parent.right
                                     }
+
+                                    ListModel {
+                                        id: tasksListModel
+                                        // Example data
+                                    }
+
                                     TextInput {
                                         width: parent.width
                                         height: parent.height
@@ -717,7 +784,7 @@ ApplicationWindow {
                                             id: taskplaceholder
                                             text: "Task"
                                             color: "#aaa"
-                                            font.pixelSize: 40                                        
+                                            font.pixelSize: 40                 
                                             anchors.fill: parent
                                             verticalAlignment: Text.AlignVCenter
                                         }
@@ -725,8 +792,12 @@ ApplicationWindow {
                                         MouseArea {
                                             anchors.fill: parent
                                             onClicked: {
-                                                python.call("backend.fetch_options_tasks", [projectInput.text] , function(result) {
-                                                    tasksList = result;
+                                                python.call("backend.fetch_options_tasks", [selectedProjectId] , function(result) {
+                                                    // tasksList = result;
+                                                    tasksListModel.clear();
+                                                    for (var i = 0; i < result.length; i++) {
+                                                        tasksListModel.append({'id': result[i].id, 'name': result[i].name, 'taskHasSubTask': true ? result[i].child_ids.length > 0 : false})
+                                                    }
                                                     menuTasks.open(); // Open the menu after fetching options
                                                 });
 
@@ -740,26 +811,33 @@ ApplicationWindow {
                                             width: taskInput.width
 
                                             Repeater {
-                                                model: tasksList
+                                                model: tasksListModel
 
                                                 MenuItem {
                                                     width: parent.width
                                                     height: 80
+                                                    property int taskId: model.id  // Custom property for ID
+                                                    property string taskName: model.name || ''
+                                                    // property bool taskHasSubTask: true ? model.child_ids.length > 0 : false
                                                     Text {
-                                                        text: modelData
+                                                        text: taskName
                                                         font.pixelSize: 40
                                                         bottomPadding: 5
                                                         topPadding: 5                                                    
                                                         color: "#000"
                                                         anchors.verticalCenter: parent.verticalCenter
                                                         anchors.left: parent.left
-                                                        anchors.leftMargin: 10                                                 
+                                                        anchors.leftMargin: 10          
                                                         wrapMode: Text.WordWrap
                                                         elide: Text.ElideRight   
                                                         maximumLineCount: 2  
                                                     }
                                                     onClicked: {
-                                                        taskInput.text = modelData
+                                                        taskInput.text = taskName
+                                                        selectedTaskId = taskId
+                                                        subTaskInput.text = ''
+                                                        selectedSubTaskId = 0
+                                                        hasSubTask = model.taskHasSubTask
                                                         menu.close()
                                                     }
                                                 }
@@ -775,6 +853,110 @@ ApplicationWindow {
                                         }
                                     }
                                 }
+
+
+
+                                Rectangle {
+                                    width: 750
+                                    height: 80
+                                    color: "transparent"
+                                    visible: hasSubTask
+
+                                    Rectangle {
+                                        width: parent.width
+                                        height: 2
+                                        color: "black"
+                                        anchors.bottom: parent.bottom
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                    }
+
+                                    ListModel {
+                                        id: subTasksListModel
+                                        // Example data
+                                    }
+
+                                    TextInput {
+                                        width: parent.width
+                                        height: parent.height
+                                        font.pixelSize: 40
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+                                        id: subTaskInput
+                                        visible: hasSubTask
+                                        // text: gridModel.get(index).task
+                                        Text {
+                                            id: subtaskplaceholder
+                                            text: "Sub Task"
+                                            color: "#aaa"
+                                            font.pixelSize: 40                                        
+                                            anchors.fill: parent
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            onClicked: {
+                                                python.call("backend.fetch_options_sub_tasks", [selectedTaskId] , function(result) {
+                                                    // subTasksList = result;
+                                                    subTasksListModel.clear();
+                                                    for (var i = 0; i < result.length; i++) {
+                                                        subTasksListModel.append(result[i]);
+                                                    }
+                                                    menuSubTasks.open(); // Open the menu after fetching options
+                                                });
+
+                                            }
+                                        }
+
+                                        Menu {
+                                            id: menuSubTasks
+                                            x: subTaskInput.x
+                                            y: subTaskInput.y + subTaskInput.height
+                                            width: subTaskInput.width
+
+                                            Repeater {
+                                                model: subTasksListModel
+
+                                                MenuItem {
+                                                    width: parent.width
+                                                    height: 80
+                                                    property int subTaskId: model.id  // Custom property for ID
+                                                    property string subTaskName: model.name || ''
+                                                    Text {
+                                                        text: subTaskName
+                                                        font.pixelSize: 40
+                                                        bottomPadding: 5
+                                                        topPadding: 5
+                                                        color: "#000"
+                                                        anchors.verticalCenter: parent.verticalCenter
+                                                        anchors.left: parent.left
+                                                        anchors.leftMargin: 10                                                 
+                                                        wrapMode: Text.WordWrap
+                                                        elide: Text.ElideRight   
+                                                        maximumLineCount: 2  
+                                                    }
+                                                    onClicked: {
+                                                        subTaskInput.text = subTaskName
+                                                        selectedSubTaskId = subTaskId
+                                                        menu.close()
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        onTextChanged: {
+                                            if (subTaskInput.text.length > 0) {
+                                                subtaskplaceholder.visible = false
+                                            } else {
+                                                subtaskplaceholder.visible = true
+                                            }
+                                        }
+                                    }
+                                }
+
+
+
 
 
                                 Rectangle {
@@ -893,8 +1075,12 @@ ApplicationWindow {
 
                                         onClicked: {
                                             if (running) {
+                                                currentTime = false;
+                                                storedElapsedTime = elapsedTime;
                                                 stopwatchTimer.stop();
                                             } else {
+                                                currentTime = new Date()
+                                                // storedElapsedTime = 0
                                                 stopwatchTimer.start();
                                             }
                                             running = !running;
@@ -919,8 +1105,10 @@ ApplicationWindow {
 
                                         text: "Reset"
                                         onClicked: {
+                                            currentTime = false;
                                             stopwatchTimer.stop();
                                             elapsedTime = 0;
+                                            storedElapsedTime = 0;
                                             running = false;
                                         }
                                     }
@@ -945,6 +1133,7 @@ ApplicationWindow {
                                             stopwatchTimer.stop();
                                             elapsedTime = 0;
                                             running = false;
+                                            storedElapsedTime = 0
                                             spenthoursManualInput.text = ""
                                             isManualTime = !isManualTime
                                         }
@@ -955,11 +1144,12 @@ ApplicationWindow {
                     }
 
                     Rectangle {
+                        property int buttonTopMargin : hasSubTask ? 1120 : 1020
                         width: parent.width
                         height: 80
                         anchors.top: parent.top
                         anchors.left: parent.left
-                        anchors.topMargin: 1000
+                        anchors.topMargin: buttonTopMargin
                         anchors.leftMargin: 20
                         anchors.right: parent.right
                         Button {
@@ -987,14 +1177,20 @@ ApplicationWindow {
                                 repeat: false
                                 onTriggered: {
                                     if (isTimesheetSaved) {
+                                        elapsedTime = 0;
+                                        storedElapsedTime = 0;
                                         isTimesheetClicked = false;
                                         isTimesheetSaved = false;
                                         isManualTime = false;
                                         projectInput.text = "";
+                                        selectedProjectId = 0
+                                        selectedTaskId = 0
+                                        hasSubTask = false
+                                        selectedSubTaskId = 0
                                         taskInput.text = "";
                                         spenthoursManualInput.text = "";
                                         descriptionInput.text = "";
-                                        elapsedTime = 0;
+
                                     }
                                 }
                             }
@@ -1004,14 +1200,22 @@ ApplicationWindow {
                                 
                                 var dataObject = {
                                     dateTime: datetimeInput.text,
-                                    project: projectInput.text,
-                                    task: taskInput.text,
+                                    project: selectedProjectId,
+                                    task: selectedTaskId,
+                                    subTask: selectedSubTaskId,
                                     isManualTimeRecord: isManualTime,
                                     manualSpentHours: spenthoursManualInput.text,
                                     description: descriptionInput.text,
                                     spenthours: spenthoursInput.text
                                 };
                                 dataArray.push(dataObject);
+                                // elapsedTime = 0;
+                                // storedElapsedTime = 0;
+                                currentTime = false;
+                                if (running) {
+                                    stopwatchTimer.stop()
+                                    running = !running
+                                }
 
                                 python.call("backend.save_timesheet_entries", [JSON.stringify(dataArray)], function (result) {
                                     isTimesheetClicked = true;
@@ -1024,11 +1228,12 @@ ApplicationWindow {
                         }
                     }
                     Rectangle {
+                        property int titleTopMargin: hasSubTask ? 1220 : 1120
                         width: parent.width
                         height: 80
                         anchors.top: parent.top
                         anchors.left: parent.left
-                        anchors.topMargin: 1100
+                        anchors.topMargin: titleTopMargin
                         anchors.leftMargin: 250
                         anchors.right: parent.right
                         Text {

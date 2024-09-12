@@ -162,6 +162,7 @@ Item {
                                     manageAccountInput.text = ''
                                     linkInput.text = ''
                                     dbInput.text = ''
+                                    dbInputMenu.text = ''
                                     usernameInput.text = ''
                                 }
                                 menuManageAccounts.close()
