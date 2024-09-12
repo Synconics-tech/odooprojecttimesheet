@@ -113,34 +113,36 @@ def fetch_options():
         [partner_ids],
         {'fields': ['name']}
     )
-    return [partner.get('name') for partner in partners]
+    return partners
 
 def fetch_options_tasks(selectedProject):
 
     models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
-    partner_ids = models.execute_kw(db, uid, password,
-        'project.project', 'search',
-        [[]]
-    )
-
-    partners = models.execute_kw(db, uid, password,
-        'project.project', 'read',
-        [partner_ids],
-        {'fields': ['name']}
-    )
-
-    projects_list = list(filter(lambda pid: pid.get('name') == selectedProject, partners))
-
+    
     partner_ids = models.execute_kw(db, uid, password,
         'project.task', 'search',
-        [[['project_id', 'in', [project.get('id') for project in projects_list]]]]
+        [[['project_id', '=', int(selectedProject)], ['parent_id', '=', False]]]
+    )
+    partners = models.execute_kw(db, uid, password,
+        'project.task', 'read',
+        [partner_ids],
+        {'fields': ['name', 'child_ids']}
+    )
+    return partners
+
+def fetch_options_sub_tasks(selected_task):
+    models = xmlrpc.client.ServerProxy('{}/xmlrpc/2/object'.format(url))
+    
+    partner_ids = models.execute_kw(db, uid, password,
+        'project.task', 'search',
+        [[['parent_id', '=', int(selected_task)]]]
     )
     partners = models.execute_kw(db, uid, password,
         'project.task', 'read',
         [partner_ids],
         {'fields': ['name']}
     )
-    return [partner.get('name') for partner in partners]
+    return partners
 
 def save_timesheet_entries(timesheet_entries):
 
@@ -149,18 +151,6 @@ def save_timesheet_entries(timesheet_entries):
     timesheet_entries = '%s' % timesheet_entries
     entry_list = json.loads(timesheet_entries)
     for entry in entry_list:
-        project = [False]
-        task = [False]
-        if entry.get('project'):
-            project = models.execute_kw(db, uid, password,
-                'project.project', 'search',
-                [[['name', '=', entry.get('project')]]]
-            )
-        if entry.get('task'):
-            task = models.execute_kw(db, uid, password,
-                'project.task', 'search',
-                [[['name', '=', entry.get('task')]]]
-            )
 
         formatted_date = False
         if entry.get('dateTime'):
@@ -177,13 +167,19 @@ def save_timesheet_entries(timesheet_entries):
             hours = int(hours)
             minutes = int(minutes)
             time_float = hours + minutes / 60.0
-        entry_vals.append({
+        prepared_vals = {
             'date': formatted_date,
-            'project_id': project[0],
-            'task_id': task[0],
+            'project_id': entry.get('project'),
+            # 'task_id': task[0],
             'name': entry.get('description'),
             'unit_amount': time_float
-        })
+        }
+        if entry.get('subTask', 0) > 0:
+            prepared_vals.update({'task_id': entry.get('subTask')})
+        else:
+            prepared_vals.update({'task_id': entry.get('task')})
+
+        entry_vals.append(prepared_vals)
     entries_timesheet = models.execute_kw(db, uid, password,
         'account.analytic.line', 'create',
         [entry_vals]
